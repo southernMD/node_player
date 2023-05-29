@@ -5,6 +5,7 @@ import {handleValidationErrors} from '../../utils/validationError'
 const router = express.Router()
 import query from '../db';
 
+//创建歌单
 router.post('/create',verifyToken,validationCreate,handleValidationErrors,async(req:any,res:Response)=>{
     try {
         const { userId } = req.user;
@@ -28,7 +29,7 @@ router.post('/create',verifyToken,validationCreate,handleValidationErrors,async(
     }
     
 })
-
+//对歌单添加歌曲
 router.post('/tracks',verifyToken,validationTracks,handleValidationErrors,async(req:any,res:Response)=>{
     try {
         const { userId } = req.user;
@@ -91,17 +92,61 @@ router.post('/tracks',verifyToken,validationTracks,handleValidationErrors,async(
         res.json({code:500,message:error})
     }
 })
-
+//收藏歌单
 router.post('/subscribe',verifyToken,validationSubscribe,handleValidationErrors,async(req:any,res:Response)=>{
     try {
         const { userId } = req.user;
         const {id,t} = req.body
         if(t == 1){
             //收藏
-            query(`select * from `)
+            const strIds:string = await new Promise<string>((resolve, reject) => {
+                query(`select * from user_starts_playlists where userid = ${userId}`,(err,data)=>{
+                    console.log(data);
+                    if(err)reject(err)
+                    else resolve(data[0].start_playList_ids)
+                })
+            })
+            const listIds = strIds==''?[]:strIds.split(',')
+            if(listIds.includes(id+'')){
+                res.json({code:501})
+            }else{
+                listIds.unshift(id+'')
+                const newStrIds = listIds.join(',')
+                await new Promise<void>((resolve, reject) => {
+                    query(`update user_starts_playlists set start_playList_ids = '${newStrIds}' where userId = ${userId}`,(err,data)=>{
+                        if(err)reject(err)
+                        else resolve()
+                    })
+                })
+                res.json({code:200})
+            }
+        }else{
+            //取消收藏
+            const strIds:string = await new Promise<string>((resolve, reject) => {
+                query(`select * from user_starts_playlists where userid = ${userId}`,(err,data)=>{
+                    console.log(data);
+                    if(err)reject(err)
+                    else resolve(data[0].start_playList_ids)
+                })
+            })
+            let listIds = strIds==''?[]:strIds.split(',')
+            if(!listIds.includes(id+'')){
+                res.json({code:501})
+            }else{
+                listIds = listIds.filter(it=>it != id+'')
+                const newStrIds = listIds.join(',')
+                await new Promise<void>((resolve, reject) => {
+                    query(`update user_starts_playlists set start_playList_ids = '${newStrIds}' where userId = ${userId}`,(err,data)=>{
+                        if(err)reject(err)
+                        else resolve()
+                    })
+                })
+                res.json({code:200})
+            }
         }
     } catch (error) {
-
+        console.log(error);
+        res.json({code:500,message:error})
     }
 })
 export default router
