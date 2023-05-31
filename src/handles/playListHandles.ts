@@ -30,4 +30,24 @@ export const validationSubscribe = [
   .notEmpty()
   .isNumeric(),
 ]
+
+export const validationDynamic = [
+  body('id')
+  .notEmpty()
+  .isNumeric(),
+]
+
+
+export const validationPlaylistTrackAll=[
+  body('id')
+  .exists()
+  .notEmpty()
+  .withMessage('id是必须的'),
+
+  body('limit')
+  .optional().notEmpty(),
+
+  body('offset')
+  .optional().notEmpty()
+]
 //401 自己 501重复收藏

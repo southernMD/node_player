@@ -1,7 +1,7 @@
 import express from 'express'
 import query from '../db';
 import http from 'http'
-import { validationPlaylist,validationArtistSub,validationFollow } from '../handles/userHandles';
+import { validationPlaylist,validationArtistSub,validationFollow, validationFollows } from '../handles/userHandles';
 import { handleValidationErrors } from '../../utils/validationError';
 import { check } from 'express-validator';
 const router = express.Router()
@@ -12,27 +12,41 @@ router.post('/playlist',validationPlaylist,handleValidationErrors,async(req:any,
         const { uid } = req.body;
         console.log(userId,uid);
         let sql = `
-        SELECT p.id, p.privacy, p.playCount, p.trackCount, p.name, p.createTime, p.description, p.tags, p.coverImgUrl, (
-            SELECT JSON_OBJECT('id', pm.userId, 'nickname', pm.nickname, 'avatarUrl', pm.avatarUrl, 'signature', pm.signature, 'createTime', pm.createTime, 'birthday', pm.birthday, 'gender', pm.gender, 'province', pm.province, 'city', pm.city)
+        SELECT p.id, p.privacy, p.playCount, p.trackCount, p.name, p.createTime, p.description, CONCAT('["', REPLACE(REPLACE(p.tags, ';', '","'), ',', ','), '"]') AS last_tag, p.coverImgUrl, (
+            SELECT JSON_OBJECT('userId', pm.userId, 'nickname', pm.nickname, 'avatarUrl', pm.avatarUrl, 'signature', pm.signature, 'createTime', pm.createTime, 'birthday', pm.birthday, 'gender', pm.gender, 'province', pm.province, 'city', pm.city)
             FROM user_message pm
             WHERE pm.userId = p.creatorId
         ) AS creator
         FROM playlists p
         JOIN user_message um ON p.creatorId = um.userId
-        WHERE (FIND_IN_SET(p.id, (SELECT playList_ids FROM user_playlists WHERE userId = 2)) > 0
-            OR FIND_IN_SET(p.id, (SELECT start_playList_ids FROM user_starts_playlists WHERE userId = 2)) > 0)
+        WHERE FIND_IN_SET(p.id, (SELECT playList_ids FROM user_playlists WHERE userId = ${userId})) > 0
+        UNION
+        SELECT p.id, p.privacy, p.playCount, p.trackCount, p.name, p.createTime, p.description, CONCAT('["', REPLACE(REPLACE(p.tags, ';', '","'), ',', ','), '"]') AS last_tag, p.coverImgUrl, (
+            SELECT JSON_OBJECT('userId', pm.userId, 'nickname', pm.nickname, 'avatarUrl', pm.avatarUrl, 'signature', pm.signature, 'createTime', pm.createTime, 'birthday', pm.birthday, 'gender', pm.gender, 'province', pm.province, 'city', pm.city)
+            FROM user_message pm
+            WHERE pm.userId = p.creatorId
+        ) AS creator
+        FROM playlists p
+        JOIN user_message um ON p.creatorId = um.userId
+        WHERE FIND_IN_SET(p.id, (SELECT start_playList_ids FROM user_starts_playlists WHERE userId = ${userId})) > 0;
         `
         if(uid != userId)sql+=` AND privacy = '0'`
-        const playlist =  await new Promise<void>((resolve, reject) => {
+        let playlist =  await new Promise<any[]>((resolve, reject) => {
             query(sql,(err,data)=>{
                 if(err)reject(err)
                 else resolve(data)
             })
         })
+        playlist = playlist.map((item)=>{
+            item['creator'] = JSON.parse(item['creator'])
+            item['tags' ]= eval(item['tags']) == null?[]:eval(item['tags']) 
+            return item
+        })
         res.json({code:200,playlist})
     } catch (error) {
         console.log(error);
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
+
     }
 })
 
@@ -47,7 +61,8 @@ router.post('/subcount',async(req:any,res)=>{
         })
         res.json(Object.assign({code:200},data) )
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
+
     }
 })
 
@@ -154,7 +169,8 @@ router.post('/artist/sub',validationArtistSub,handleValidationErrors,async(req:a
             }
         }
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
+
     }
 })
 //收藏的歌手列表
@@ -170,7 +186,8 @@ router.post('/artist/sublist',async(req:any,res)=>{
         })
         res.json({code:200,data:ans,count:ans.length})
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
+
     }
 })
 //收藏取消收藏专辑
@@ -276,7 +293,7 @@ router.post('/album/sub',validationArtistSub,handleValidationErrors,async(req:an
             }
         }
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
     }
 })
 //收藏的专辑列表
@@ -306,7 +323,7 @@ router.post('/album/sublist',async(req:any,res)=>{
         res.json({data:ans,count,more:ans.length < count})
     } catch (error) {
         console.log(error);
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
     }
 })
 
@@ -359,12 +376,88 @@ router.post('/follow',validationFollow,handleValidationErrors,async(req:any,res)
         }
 
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
     }
 })
 
 //我的关注
-// router.post('/follows',async(req,res)=>{
+router.post('/follows',validationFollows,handleValidationErrors,async(req:any,res)=>{
+    try {
+        const {userId} = req.user
+        let {uid ,limit,offset } = req.body
+        limit = limit ?? 30
+        offset = offset ?? 0
+        let count = await new Promise<any>((resolve, reject) => {
+            query(`SELECT count(userId) AS count FROM user_follow WHERE userId = ${uid}`,(err,data)=>{
+                if(err)reject(err)
+                else resolve(data[0].count)
+            })
+        })
+        let jsonResult = await new Promise<any>((resolve, reject) => {
+            query(`SELECT JSON_ARRAYAGG(jsonObj) AS jsonResult
+            FROM (
+                SELECT JSON_OBJECT(
+                    'userId', uf.followId,
+                    'nickname', um.nickname,
+                    'createdPlaylistCount', us.createdPlaylistCount,
+                    'avatarUrl', um.avatarUrl,
+                    'follows', um.follows,
+                    'gender', um.gender,
+                    'followeds', um.followeds,
+                    'signature', um.signature,
+                    'eventCount', um.eventCount,
+                    'followed', true
+                ) AS jsonObj
+                FROM user_follow uf
+                JOIN user_message um ON uf.followId = um.userId
+                JOIN user_subcount us ON uf.followId = us.userId
+                WHERE uf.userId = ${uid}
+                LIMIT ${offset},${limit}
+            ) AS subquery;`,(err,data)=>{
+                if(err)reject(err)
+                else resolve(JSON.parse(data[0].jsonResult))
+            })
+        })
+        let arr =  jsonResult == null?[]:jsonResult
+        console.log(arr.map((it)=>{
+            it.followed = true
+            return it
+        }));
+        res.json({code:200,follow:arr,more:offset + arr.length < count})
+    } catch (error) {
+        res.status(500).json({code:500,message:error})
+    }
 
-// })
+})
+
+//用户信息
+router.post('/detail',async(req:any,res)=>{
+    try {
+        const {userId} = req.user
+        let {uid} = req.body
+        let profile = await new Promise<any>((resolve, reject) => {
+           query(`SELECT JSON_OBJECT('userId',userId,
+           'nickname',nickname,
+           'avatarUrl',avatarUrl,
+           'signature', signature,
+           'createTime', createTime,
+           'birthday', birthday,
+           'gender', gender,
+           'province',province,
+           'city',city,
+           'followeds',followeds,
+           'follows',follows,
+           'eventCount',eventCount) as profile
+            FROM user_message
+            WHERE userId = ${uid};`,(err,data)=>{
+            if(err)reject(err)
+            else resolve(data[0])
+           }) 
+        })
+        console.log(profile);
+        res.json({code:200,profile:JSON.parse(profile.profile)})
+    } catch (error) {
+        res.status(500).json({code:500,message:error})
+    }
+})
 export default router

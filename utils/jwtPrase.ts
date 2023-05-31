@@ -25,7 +25,7 @@ export const verifyTokenAllPass: RequestHandler = (req: Request, res: Response, 
   const token = req.headers.authorization ?? '';
   jwt.verify(token.split('Bearer ')[1], 'daniuma1145141919810', (err, decoded) => {
     //@ts-ignore
-    req['user'] = decoded; // 将解码后的用户信息存储在请求对象中，以便后续处理使用
+    req['user'] = decoded ?? {}; // 将解码后的用户信息存储在请求对象中，以便后续处理使用
     next();
   });
 }

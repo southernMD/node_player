@@ -16,6 +16,7 @@ app.use('/regAndLog',RegisterAndLogin)
 app.use('/playList',playList)
 app.use('/user',verifyTokenAllPass,user)
 app.use(others)
+
 export const viteNodeApp = app;
 
 

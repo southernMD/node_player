@@ -29,3 +29,16 @@ export const validationFollow = [
     .notEmpty()
     .withMessage('id是必须的'),
 ]
+
+export const validationFollows=[
+    check('uid')
+    .exists()
+    .notEmpty()
+    .withMessage('uid是必须的'),
+
+    body('limit')
+    .optional().isNumeric().notEmpty(),
+
+    body('offset')
+    .optional().isNumeric().notEmpty()
+]

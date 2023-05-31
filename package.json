@@ -16,6 +16,7 @@
     "@types/mysql": "^2.15.21",
     "@types/node": "^20.2.3",
     "@types/nodemailer": "^6.4.8",
+    "@types/ws": "^8.5.4",
     "typescript": "^5.0.2",
     "vite": "^4.3.2",
     "vite-plugin-node": "^3.0.2"
@@ -28,6 +29,7 @@
     "md5": "^2.3.0",
     "mysql": "^2.18.1",
     "nodemailer": "^6.9.2",
-    "portfinder": "^1.0.32"
+    "portfinder": "^1.0.32",
+    "ws": "^8.13.0"
   }
 }

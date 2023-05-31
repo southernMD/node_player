@@ -15,7 +15,7 @@ router.post(`/likelist`,async(req,res)=>{
         const idsNumber = ids[0]==''?[]:ids.map(str=>+str)
         res.json({code:200,ids:idsNumber})
     } catch (error) {
-        res.json({code:500,message:error})
+        res.status(500).json({code:500,message:error})
     }
 })
 

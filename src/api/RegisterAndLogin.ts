@@ -7,6 +7,7 @@ import {validationRegister,validationEmail,validationLogin} from '../handles/Reg
 import {handleValidationErrors} from '../../utils/validationError'
 import jwt from 'jsonwebtoken';
 import md5 from 'md5';
+import { verifyToken } from '../../utils/jwtPrase';
 const salt:any = 'da(&&&**(($$$$$$%%%%%%%%&*$$$&*'
 const transporter: Transporter<unknown> = nodemailer.createTransport({
     host: 'smtp.qq.com',
@@ -137,7 +138,7 @@ async(req:Request,res:Response)=>{
         }
     } catch (error) {
         console.log(error);
-        res.send({
+        res.status(500).send({
             status: 500,
             message: '服务器错误',
         });
@@ -170,6 +171,35 @@ router.post('/login',validationLogin,handleValidationErrors,(req:Request,res:Res
         }
     })
 
+})
+
+router.post('/login/status',verifyToken,async(req:any,res)=>{
+    try {
+        const {userId} = req.user
+        let profile = await new Promise<any>((resolve, reject) => {
+           query(`SELECT JSON_OBJECT('userId',userId,
+           'nickname',nickname,
+           'avatarUrl',avatarUrl,
+           'signature', signature,
+           'createTime', createTime,
+           'birthday', birthday,
+           'gender', gender,
+           'province',province,
+           'city',city,
+           'followeds',followeds,
+           'follows',follows,
+           'eventCount',eventCount) as profile
+            FROM user_message
+            WHERE userId = ${userId};`,(err,data)=>{
+            if(err)reject(err)
+            else resolve(data[0])
+           }) 
+        })
+        console.log(profile);
+        res.json({code:200,profile:JSON.parse(profile.profile)})
+    } catch (error) {
+        res.status(500).json({code:500,message:error})
+    }
 })
 
 export default router
