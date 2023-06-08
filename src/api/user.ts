@@ -466,24 +466,34 @@ router.post('/detail', verifyTokenAllPass, async (req: any, res) => {
         res.status(500).json({ code: 500, message: error })
     }
 })
-router.post('/update', verifyToken, validationUpdate, handleValidationErrors, async (req: any, res) => {
+router.post('/update', verifyToken, validationUpdate, handleValidationErrors, async (req: any, res:any) => {
     try {
         const { userId } = req.user
         const { gender, birthday, nickname, province, city, signature } = req.body
-        await new Promise<void>((resolve, reject) => {
-            query(`update user_message set 
-            gender = '${gender}',
-            birthday = '${birthday}',
-            nickname = '${nickname}',
-            province = ${province},
-            city = ${city},
-            signature = '${signature}'
-            where userId = ${userId}`, (err, data) => {
-                if (err) reject(err)
+        let len = await new Promise<any>((resolve, reject) => {
+            query(`select * from user_message where nickname = '${nickname}' and userId <> ${userId}`,(err,data)=>{
+                if(err)reject(err)
                 else resolve(data)
             })
         })
-        res.json({ code: 200 })
+        if(len.length != 0){
+            res.json({code:401,nickname:'该昵称已被占用！'})
+        }else{
+            await new Promise<void>((resolve, reject) => {
+                query(`update user_message set 
+                gender = '${gender}',
+                birthday = '${birthday}',
+                nickname = '${nickname}',
+                province = ${province},
+                city = ${city},
+                signature = '${signature}'
+                where userId = ${userId}`, (err, data) => {
+                    if (err) reject(err)
+                    else resolve(data)
+                })
+            })
+            res.json({ code: 200 })
+        }
     } catch (error) {
         res.status(500).json({ code: 500, message: error })
     }
@@ -785,6 +795,26 @@ router.post('/record',async(req:any,res)=>{
         }
     } catch (error) {
         res.json({code:500,allData:[]})
+    }
+})
+
+router.post('/check/nickname',verifyToken,async(req:any,res)=>{
+    try {
+        let {userId} = req.user
+        let {nickname} = req.body
+        let len = await new Promise<any>((resolve, reject) => {
+            query(`select * from user_message where nickname = '${nickname}' and userId <> ${userId}`,(err,data)=>{
+                if(err)reject(err)
+                else resolve(data)
+            })
+        })
+        if(len.length != 0){
+            res.json({code:401,nickname:'该昵称已被占用！'})
+        }else{
+            res.json({code:200})
+        }
+    } catch (error) {
+        res.status(500).json({ code: 500, message: error })
     }
 })
 
