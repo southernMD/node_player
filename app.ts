@@ -25,6 +25,9 @@ app.use('/playList', playList);
 app.use('/user', verifyTokenAllPass, user);
 app.use(others);
 
+app.get('/',(req,res)=>{
+  res.send('Hello world!')
+})
 executeCronJob()
 
 if (import.meta.env.PROD) {
