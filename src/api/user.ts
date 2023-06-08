@@ -10,6 +10,12 @@ import jimp from 'jimp'
 import axios from 'axios'
 const router = express.Router()
 
+router.get('/',(req,res)=>{
+    res.send('test')
+})
+router.get('/s',(req,res)=>{
+    res.send('test-s')
+})
 router.post('/playlist', validationPlaylist, handleValidationErrors, async (req: any, res) => {
     try {
         const { userId } = req.user
