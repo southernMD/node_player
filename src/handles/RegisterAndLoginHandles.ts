@@ -28,3 +28,4 @@ export const validationRegister =
 ]
 
 export const validationEmail = check("email", "请输入正确的邮件地址").exists().notEmpty().isEmail()
+

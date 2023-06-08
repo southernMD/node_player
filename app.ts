@@ -1,22 +1,41 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-import RegisterAndLogin from './src/api/RegisterAndLogin'
-import playList from './src/api/playList'
-import user from './src/api/user'
-import others from './src/api/others'
-import cors from 'cors'
-import {verifyToken,verifyTokenAllPass} from './utils/jwtPrase'
+import cors from 'cors';
+import { verifyToken, verifyTokenAllPass } from './utils/jwtPrase';
+import { executeCronJob } from './utils/task';
+import portfinder from 'portfinder';
+import cron from 'node-cron';
+
 const app = express();
-// your beautiful code...
-app.use(bodyParser.urlencoded({ extended: false }));// parse application/x-www-form-urlencoded   针对普通页面提交功能
-app.use(bodyParser.json());  // parse application/json    针对异步提交ajax
-app.use(cors())
-//router
-app.use('/regAndLog',RegisterAndLogin)
-app.use('/playList',playList)
-app.use('/user',verifyTokenAllPass,user)
-app.use(others)
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(cors());
+
+// Import api modules
+import RegisterAndLogin from './src/api/RegisterAndLogin';
+import playList from './src/api/playList';
+import user from './src/api/user';
+import others from './src/api/others';
+
+
+// router
+app.use('/regAndLog', RegisterAndLogin);
+app.use('/playList', playList);
+app.use('/user', verifyTokenAllPass, user);
+app.use(others);
+
+executeCronJob()
+
+if (import.meta.env.PROD) {
+  (async () => {
+    const port = await portfinder.getPortPromise({
+      port: 3000,
+    });
+    app.listen(port, () => {
+      console.log(`http://localhost:${port}`);
+    });
+  })();
+}
 
 export const viteNodeApp = app;
-
-

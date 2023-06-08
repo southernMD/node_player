@@ -51,3 +51,32 @@ export const validationPlaylistTrackAll=[
   .optional().notEmpty()
 ]
 //401 自己 501重复收藏
+
+export const validationUpdate = [
+  body('id')
+  .exists()
+  .notEmpty(),
+  body('name')
+  .exists()
+  .notEmpty(),
+  body('desc')
+  .exists(),
+  body('tags')
+  .exists()
+]
+
+export const validationUpdateTags =[
+  body('id')
+  .exists()
+  .notEmpty(),
+  body('tags')
+  .exists()
+]
+
+export const validationCover = [
+  check('id').notEmpty(),
+
+  check('imgSize').optional(),
+  check('imgX').optional(),
+  check('imgY').optional(),
+]

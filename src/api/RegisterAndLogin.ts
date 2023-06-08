@@ -37,7 +37,6 @@ const replayHTML = (email:string, code:string) => {
     }
 }
 
-
 router.post('/email', 
 validationEmail,handleValidationErrors
 ,(req:Request,res:Response) => {
@@ -153,6 +152,7 @@ router.post('/login',validationLogin,handleValidationErrors,(req:Request,res:Res
             else resolve(data)
         })
     }).then((data)=>{
+        console.log(data);
         if(data.length != 0){
             const token = jwt.sign({email:data[0].email,nickname:data[0].nickname,userId:data[0].id},'daniuma1145141919810',{
                 expiresIn:'15d'

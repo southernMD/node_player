@@ -42,3 +42,29 @@ export const validationFollows=[
     body('offset')
     .optional().isNumeric().notEmpty()
 ]
+
+export const validationUpdate = [
+    check('gender')
+    .exists()
+    .notEmpty(),
+    check('birthday')
+    .exists()
+    .notEmpty(),
+    check('nickname')
+    .exists()
+    .notEmpty(),
+    check('province')
+    .exists()
+    .notEmpty(),
+    check('city')
+    .exists()
+    .notEmpty(),
+    check('signature')
+    .exists()
+]
+
+export const validationAvatar = [
+    check('imgSize').optional(),
+    check('imgX').optional(),
+    check('imgY').optional(),
+  ]
