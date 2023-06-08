@@ -69,23 +69,23 @@ export default defineConfig(async()=>{
           //   'fastify-swagger',
           // ],
         },
-        build:{
-          target:'es2017',
-          rollupOptions: {
-            output: {
-              manualChunks(id) {
-                if (id.includes('/api/')) {
-                  return 'api';
-                }
-                if (id.includes('/handles/')) {
-                  return 'handles';
-                }
-                if (id.includes('/utils/')) {
-                  return 'utils';
-                }
-              },
-            },
-          },
-        }
+        // build:{
+        //   target:'es2017',
+        //   rollupOptions: {
+        //     output: {
+        //       manualChunks(id) {
+        //         if (id.includes('/api/')) {
+        //           return 'api';
+        //         }
+        //         if (id.includes('/handles/')) {
+        //           return 'handles';
+        //         }
+        //         if (id.includes('/utils/')) {
+        //           return 'utils';
+        //         }
+        //       },
+        //     },
+        //   },
+        // }
       }
 });
