@@ -775,7 +775,7 @@ router.post('/share/resource',verifyToken,upload.array('files'),async(req:any,re
                 })
             })
             if(response.length == 0){
-                let albumDetail:any = (await axios.get(`http://cloud-music.pl-fe.cn/album?id=${id}`)).data.songs[0]
+                let albumDetail:any = (await axios.get(`http://cloud-music.pl-fe.cn/album?id=${id}`)).data.album
                 const {name, picUrl, artists,size} = albumDetail
                 await new Promise<any>((resolve, reject) => {
                     query(`INSERT INTO album_info (id, name, picUrl, size, artists) VALUES (${id}, '${name}','${picUrl}', '${size}','${JSON.stringify(artists)}');
